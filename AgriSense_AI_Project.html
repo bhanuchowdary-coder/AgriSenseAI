@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AgriSense AI — Precision Agriculture Monitoring System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #05080f;
+    --bg2:      #0a1020;
+    --bg3:      #0f1929;
+    --border:   rgba(255,255,255,0.07);
+    --green:    #22d474;
+    --green2:   #0f7a3f;
+    --blue:     #38b2f5;
+    --orange:   #f97316;
+    --red:      #ef4444;
+    --yellow:   #eab308;
+    --text:     #e2e8f0;
+    --muted:    #64748b;
+    --card-bg:  rgba(255,255,255,0.03);
+    --font-display: 'Syne', sans-serif;
+    --font-body:    'DM Sans', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--bg);color:var(--text);
+    font-family:var(--font-body);font-size:14px;
+    min-height:100vh;overflow-x:hidden;
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar{width:5px}
+  ::-webkit-scrollbar-track{background:var(--bg)}
+  ::-webkit-scrollbar-thumb{background:#1e2d40;border-radius:4px}
+
+  /* ── HEADER ── */
+  header{
+    position:sticky;top:0;z-index:999;
+    background:rgba(5,8,15,0.92);
+    backdrop-filter:blur(20px);
+    border-bottom:1px solid rgba(34,212,116,0.12);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 32px;height:64px;
+  }
+  .logo{display:flex;align-items:center;gap:14px}
+  .logo-icon{
+    width:38px;height:38px;border-radius:10px;
+    background:linear-gradient(135deg,#22d474,#059652);
+    display:flex;align-items:center;justify-content:center;
+    font-size:20px;flex-shrink:0;
+    box-shadow:0 0 20px rgba(34,212,116,0.3);
+  }
+  .logo-text{font-family:var(--font-display);font-size:19px;font-weight:800;letter-spacing:-0.03em}
+  .logo-sub{font-size:10px;color:var(--green);letter-spacing:0.12em;text-transform:uppercase;margin-top:1px}
+  .header-right{display:flex;align-items:center;gap:20px}
+  .live-dot{
+    width:9px;height:9px;border-radius:50%;background:var(--green);
+    box-shadow:0 0 10px var(--green);animation:pulse 2s infinite;
+  }
+  #clock{font-family:var(--font-mono);font-size:13px;color:var(--muted)}
+  .header-badge{
+    background:rgba(34,212,116,0.1);border:1px solid rgba(34,212,116,0.25);
+    color:var(--green);font-size:11px;font-weight:600;
+    padding:4px 12px;border-radius:20px;letter-spacing:0.04em;
+  }
+
+  /* ── NAV TABS ── */
+  nav{
+    display:flex;background:var(--bg2);
+    border-bottom:1px solid var(--border);
+    padding:0 28px;overflow-x:auto;
+  }
+  nav::-webkit-scrollbar{height:0}
+  .tab{
+    padding:14px 22px;font-size:13px;font-weight:600;
+    background:none;border:none;cursor:pointer;color:var(--muted);
+    border-bottom:2px solid transparent;transition:all .2s;
+    white-space:nowrap;letter-spacing:0.02em;font-family:var(--font-body);
+  }
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--green);border-bottom-color:var(--green)}
+
+  /* ── LAYOUT ── */
+  main{padding:28px 32px;max-width:1500px;margin:0 auto}
+  .page{display:none}
+  .page.active{display:block}
+
+  /* ── GRID ── */
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .grid-21{display:grid;grid-template-columns:2fr 1fr;gap:16px}
+  .grid-12{display:grid;grid-template-columns:1fr 2fr;gap:16px}
+  @media(max-width:900px){.grid-4,.grid-3,.grid-2,.grid-21,.grid-12{grid-template-columns:1fr}}
+
+  /* ── CARD ── */
+  .card{
+    background:var(--card-bg);
+    border:1px solid var(--border);
+    border-radius:18px;padding:22px 24px;
+  }
+  .card-accent-green{border-top:2px solid var(--green)}
+  .card-accent-blue{border-top:2px solid var(--blue)}
+  .card-accent-orange{border-top:2px solid var(--orange)}
+  .card-accent-red{border-top:2px solid var(--red)}
+
+  /* ── STAT CARD ── */
+  .stat-card{
+    background:var(--card-bg);border:1px solid var(--border);
+    border-radius:16px;padding:20px 22px;
+    display:flex;flex-direction:column;gap:8px;
+    transition:border-color .3s;
+  }
+  .stat-card:hover{border-color:rgba(34,212,116,0.2)}
+  .stat-label{
+    font-size:11px;color:var(--muted);text-transform:uppercase;
+    letter-spacing:0.08em;font-weight:600;
+  }
+  .stat-icon{font-size:22px}
+  .stat-row{display:flex;justify-content:space-between;align-items:flex-start}
+  .stat-value{
+    font-family:var(--font-mono);font-size:34px;font-weight:600;
+    line-height:1;margin-top:4px;
+  }
+  .stat-unit{font-size:14px;color:var(--muted);margin-left:3px}
+  .stat-sub{font-size:12px;color:var(--muted)}
+
+  /* ── SECTION TITLE ── */
+  .section-title{
+    font-family:var(--font-display);font-size:16px;font-weight:700;
+    color:var(--text);margin-bottom:18px;
+    display:flex;align-items:center;gap:10px;letter-spacing:-0.01em;
+  }
+  .section-title .dot{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--green);display:inline-block;
+  }
+
+  gap-16{gap:16px}
+  .mt16{margin-top:16px}
+  .mt24{margin-top:24px}
+  .flex{display:flex}
+  .flex-col{display:flex;flex-direction:column}
+  .gap-8{gap:8px}
+  .gap-12{gap:12px}
+  .gap-16{gap:16px}
+  .gap-24{gap:24px}
+
+  /* ── CHART WRAPPER ── */
+  .chart-wrap{position:relative;width:100%}
+
+  /* ── BADGE ── */
+  .badge{
+    display:inline-block;padding:3px 10px;border-radius:6px;
+    font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;
+  }
+  .badge-green {background:rgba(34,212,116,0.12);color:#22d474;border:1px solid rgba(34,212,116,0.25)}
+  .badge-yellow{background:rgba(234,179,8,0.12); color:#eab308;border:1px solid rgba(234,179,8,0.25)}
+  .badge-orange{background:rgba(249,115,22,0.12);color:#f97316;border:1px solid rgba(249,115,22,0.25)}
+  .badge-red   {background:rgba(239,68,68,0.12); color:#ef4444;border:1px solid rgba(239,68,68,0.25)}
+  .badge-blue  {background:rgba(56,178,245,0.12);color:#38b2f5;border:1px solid rgba(56,178,245,0.25)}
+
+  /* ── TABLE ── */
+  .tbl{width:100%;border-collapse:collapse}
+  .tbl th{
+    font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;
+    padding:10px 14px;text-align:left;font-weight:700;
+    border-bottom:1px solid var(--border);
+  }
+  .tbl td{
+    padding:12px 14px;font-size:13px;
+    border-bottom:1px solid rgba(255,255,255,0.03);
+  }
+  .tbl tr:hover td{background:rgba(255,255,255,0.02)}
+  .mono{font-family:var(--font-mono)}
+
+  /* ── PROGRESS BAR ── */
+  .prog-wrap{height:5px;background:rgba(255,255,255,0.07);border-radius:3px;margin-top:6px}
+  .prog-bar{height:100%;border-radius:3px;transition:width .4s ease}
+
+  /* ── ALERT ROWS ── */
+  .alert-row{
+    display:flex;justify-content:space-between;align-items:center;
+    padding:12px 14px;border-radius:10px;margin-bottom:8px;
+    background:rgba(255,255,255,0.02);border:1px solid var(--border);
+    transition:background .2s;
+  }
+  .alert-row:hover{background:rgba(255,255,255,0.04)}
+  .alert-type{font-size:13px;font-weight:600;color:var(--text)}
+  .alert-meta{font-size:11px;color:var(--muted);margin-top:2px}
+
+  /* ── FORECAST BARS ── */
+  .forecast-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-top:4px}
+  .fc-col{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .fc-bar-wrap{
+    width:100%;height:140px;display:flex;align-items:flex-end;
+    justify-content:center;background:rgba(255,255,255,0.03);
+    border-radius:10px;padding:8px 6px;
+  }
+  .fc-bar{width:100%;border-radius:6px;transition:height .5s ease;min-height:4px}
+  .fc-label{font-size:11px;color:var(--muted);font-weight:600}
+  .fc-score{font-family:var(--font-mono);font-size:13px;font-weight:600}
+
+  /* ── NDVI MAP GRID ── */
+  .ndvi-map-grid{
+    display:grid;grid-template-columns:repeat(20,1fr);
+    gap:2px;border-radius:12px;overflow:hidden;
+  }
+  .ndvi-cell{height:24px;border-radius:2px;transition:opacity .2s}
+  .ndvi-cell:hover{opacity:.7;cursor:crosshair}
+
+  /* ── DISEASE UPLOAD ── */
+  .upload-zone{
+    border:2px dashed rgba(34,212,116,0.3);border-radius:16px;
+    padding:40px;text-align:center;cursor:pointer;
+    transition:all .3s;background:rgba(34,212,116,0.02);
+  }
+  .upload-zone:hover{border-color:var(--green);background:rgba(34,212,116,0.05)}
+  .upload-zone input{display:none}
+  .upload-icon{font-size:48px;margin-bottom:12px}
+  .upload-text{font-size:15px;color:var(--green);font-weight:600;margin-bottom:6px}
+  .upload-sub{font-size:12px;color:var(--muted)}
+  #preview-img{
+    max-width:100%;max-height:200px;border-radius:12px;margin-top:16px;
+    border:1px solid var(--border);display:none;
+  }
+
+  /* ── RESULT BOX ── */
+  .result-box{
+    padding:16px;border-radius:12px;margin-bottom:16px;
+  }
+  .result-box.healthy{background:rgba(34,212,116,0.08);border:1px solid rgba(34,212,116,0.25)}
+  .result-box.diseased{background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25)}
+  .result-disease{font-size:17px;font-weight:700;margin-top:6px}
+  .result-conf{font-size:13px;color:var(--muted);margin-top:4px}
+
+  /* ── SENSOR GAUGE ── */
+  .gauge-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .gauge-label{font-size:12px;color:var(--muted);width:100px;flex-shrink:0}
+  .gauge-track{flex:1;height:8px;background:rgba(255,255,255,0.07);border-radius:4px}
+  .gauge-fill{height:100%;border-radius:4px}
+  .gauge-val{font-family:var(--font-mono);font-size:13px;width:55px;text-align:right;flex-shrink:0}
+
+  /* ── ZONE MAP ── */
+  .zone-map{
+    display:grid;grid-template-columns:repeat(3,1fr);
+    grid-template-rows:repeat(3,80px);gap:6px;
+  }
+  .zone{
+    border-radius:12px;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:4px;
+    font-size:12px;font-weight:600;cursor:pointer;transition:opacity .2s;
+  }
+  .zone:hover{opacity:.85}
+  .zone-name{font-size:11px;opacity:.8}
+  .zone-val{font-family:var(--font-mono);font-size:18px;font-weight:700}
+
+  /* ── LOADING SPINNER ── */
+  .spinner{
+    width:32px;height:32px;border:3px solid var(--border);
+    border-top-color:var(--green);border-radius:50%;
+    animation:spin .8s linear infinite;margin:0 auto;
+  }
+  #analyze-section{text-align:center;padding:30px;display:none}
+
+  /* ── INFO PILL ── */
+  .info-pill{
+    display:inline-flex;align-items:center;gap:6px;
+    background:rgba(255,255,255,0.04);border:1px solid var(--border);
+    border-radius:20px;padding:5px 14px;font-size:12px;color:var(--muted);
+  }
+
+  /* ── TIMELINE ── */
+  .timeline-item{
+    display:flex;gap:14px;padding-bottom:18px;
+    border-left:2px solid rgba(34,212,116,0.2);margin-left:6px;
+    padding-left:20px;position:relative;
+  }
+  .timeline-dot{
+    width:12px;height:12px;border-radius:50%;background:var(--green);
+    position:absolute;left:-7px;top:3px;box-shadow:0 0 8px var(--green);
+  }
+  .timeline-time{font-size:11px;color:var(--muted);white-space:nowrap;margin-top:2px}
+  .timeline-msg{font-size:13px;color:var(--text)}
+
+  /* ── ANIMATIONS ── */
+  @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.9)}}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes glow{0%,100%{box-shadow:0 0 20px rgba(34,212,116,.15)}50%{box-shadow:0 0 40px rgba(34,212,116,.35)}}
+
+  .page.active .card,.page.active .stat-card{
+    animation:fadeUp .35s ease both;
+  }
+  .page.active .stat-card:nth-child(2){animation-delay:.05s}
+  .page.active .stat-card:nth-child(3){animation-delay:.1s}
+  .page.active .stat-card:nth-child(4){animation-delay:.15s}
+
+  /* ── RECOMMENDATION BOX ── */
+  .rec-box{
+    background:rgba(234,179,8,0.07);border:1px solid rgba(234,179,8,0.2);
+    border-radius:12px;padding:16px;
+  }
+  .rec-title{font-size:11px;font-weight:700;color:var(--yellow);
+    text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+  .rec-text{font-size:13px;line-height:1.7;color:var(--text)}
+
+  /* SCROLLABLE SMALL */
+  .scroll-list{max-height:320px;overflow-y:auto;padding-right:4px}
+  .scroll-list::-webkit-scrollbar{width:3px}
+  .scroll-list::-webkit-scrollbar-thumb{background:#1e2d40;border-radius:2px}
+
+  /* ── FOOTER ── */
+  footer{
+    border-top:1px solid var(--border);
+    padding:16px 32px;text-align:center;
+    font-size:12px;color:var(--muted);margin-top:40px;
+  }
+  footer span{color:var(--green)}
+
+  /* model info */
+  .model-chip{
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(56,178,245,0.07);border:1px solid rgba(56,178,245,0.2);
+    border-radius:8px;padding:8px 14px;font-size:12px;
+  }
+  .model-chip-icon{font-size:16px}
+  .model-chip-name{color:var(--blue);font-weight:700}
+  .model-chip-info{color:var(--muted)}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════ HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">🌾</div>
+    <div>
+      <div class="logo-text">AgriSense <span style="color:var(--green)">AI</span></div>
+      <div class="logo-sub">Precision Agriculture Monitoring System</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="header-badge">🛰️ Sentinel-2 &nbsp;|&nbsp; 5 Sensors Live</div>
+    <div id="clock" class="mono">--:--:--</div>
+    <div class="live-dot"></div>
+  </div>
+</header>
+
+<!-- ══════════════════════════════════════════════════════ NAV -->
+<nav>
+  <button class="tab active" onclick="showPage('overview')">📊 Overview</button>
+  <button class="tab" onclick="showPage('vegetation')">🌿 Vegetation Indices</button>
+  <button class="tab" onclick="showPage('sensors')">📡 Sensor Data</button>
+  <button class="tab" onclick="showPage('disease')">🔬 Disease AI</button>
+  <button class="tab" onclick="showPage('forecast')">🐛 Pest Forecast</button>
+  <button class="tab" onclick="showPage('about')">📋 About Project</button>
+</nav>
+
+<!-- ══════════════════════════════════════════════════════ MAIN -->
+<main>
+
+<!-- ─────────────────────────────── OVERVIEW PAGE -->
+<div id="page-overview" class="page active">
+  <div class="grid-4" style="margin-bottom:20px">
+    <div class="stat-card card-accent-green">
+      <div class="stat-row">
+        <div class="stat-label">Field Health Score</div>
+        <div class="stat-icon">🌿</div>
+      </div>
+      <div><span class="stat-value" style="color:var(--green)">72</span><span class="stat-unit">/100</span></div>
+      <div class="stat-sub">Based on NDVI · EVI · SAVI composite</div>
+      <div class="prog-wrap"><div class="prog-bar" style="width:72%;background:var(--green)"></div></div>
+    </div>
+    <div class="stat-card card-accent-blue">
+      <div class="stat-row">
+        <div class="stat-label">Avg Soil Moisture</div>
+        <div class="stat-icon">💧</div>
+      </div>
+      <div><span class="stat-value" style="color:var(--blue)">45.5</span><span class="stat-unit">%</span></div>
+      <div class="stat-sub">Avg across 5 field sensors</div>
+      <div class="prog-wrap"><div class="prog-bar" style="width:45.5%;background:var(--blue)"></div></div>
+    </div>
+    <div class="stat-card card-accent-orange">
+      <div class="stat-row">
+        <div class="stat-label">Current Pest Risk</div>
+        <div class="stat-icon">🐛</div>
+      </div>
+      <div><span class="stat-value" style="color:var(--orange)">46</span><span class="stat-unit">/100</span></div>
+      <div class="stat-sub">Moderate — West Zone critical</div>
+      <div class="prog-wrap"><div class="prog-bar" style="width:46%;background:var(--orange)"></div></div>
+    </div>
+    <div class="stat-card card-accent-red">
+      <div class="stat-row">
+        <div class="stat-label">Active Alerts</div>
+        <div class="stat-icon">🚨</div>
+      </div>
+      <div><span class="stat-value" style="color:var(--red)">4</span><span class="stat-unit"></span></div>
+      <div class="stat-sub">1 critical · 2 high · 1 medium</div>
+      <div class="prog-wrap"><div class="prog-bar" style="width:80%;background:var(--red)"></div></div>
+    </div>
+  </div>
+
+  <div class="grid-21" style="margin-bottom:20px">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>NDVI Trend — Last 30 Days</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartNDVI"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>🚨 Active Alerts</div>
+      <div class="scroll-list">
+        <div class="alert-row">
+          <div><div class="alert-type">HIGH TEMPERATURE</div><div class="alert-meta">Sensor S04 · 35.2°C · 2h ago</div></div>
+          <span class="badge badge-red">Critical</span>
+        </div>
+        <div class="alert-row">
+          <div><div class="alert-type">LOW SOIL MOISTURE</div><div class="alert-meta">Sensor S04 · 29.4% · 2h ago</div></div>
+          <span class="badge badge-red">High</span>
+        </div>
+        <div class="alert-row">
+          <div><div class="alert-type">HIGH PEST RISK</div><div class="alert-meta">Sensor S04 · Score 74.2 · 2h ago</div></div>
+          <span class="badge badge-orange">High</span>
+        </div>
+        <div class="alert-row">
+          <div><div class="alert-type">ELEVATED HUMIDITY</div><div class="alert-meta">Sensor S02 · 72.1% · 5h ago</div></div>
+          <span class="badge badge-yellow">Medium</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Temperature & Humidity — 14 Days</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chartTempHum"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Daily Pest Risk Score</div>
+      <div class="chart-wrap" style="height:200px"><canvas id="chartPestOverview"></canvas></div>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── VEGETATION PAGE -->
+<div id="page-vegetation" class="page">
+  <div class="grid-4" style="margin-bottom:24px">
+    <div class="card card-accent-green">
+      <div style="font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--green)">NDVI</div>
+      <div style="font-size:42px;font-weight:700;font-family:var(--font-mono);margin:10px 0">0.58</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Normalized Difference Vegetation Index</div>
+      <span class="badge badge-green">Good Health</span>
+      <div style="margin-top:12px;font-size:12px;color:var(--muted)">Formula: (NIR − Red) / (NIR + Red)</div>
+    </div>
+    <div class="card card-accent-blue" style="border-top-color:#a3e635">
+      <div style="font-family:var(--font-display);font-size:26px;font-weight:800;color:#a3e635">EVI</div>
+      <div style="font-size:42px;font-weight:700;font-family:var(--font-mono);margin:10px 0">0.44</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Enhanced Vegetation Index</div>
+      <span class="badge" style="background:rgba(163,230,53,.12);color:#a3e635;border-color:rgba(163,230,53,.3)">Moderate</span>
+      <div style="margin-top:12px;font-size:12px;color:var(--muted)">Reduces canopy saturation effects</div>
+    </div>
+    <div class="card" style="border-top:2px solid var(--yellow)">
+      <div style="font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--yellow)">SAVI</div>
+      <div style="font-size:42px;font-weight:700;font-family:var(--font-mono);margin:10px 0">0.51</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Soil-Adjusted Vegetation Index</div>
+      <span class="badge badge-yellow">Good</span>
+      <div style="margin-top:12px;font-size:12px;color:var(--muted)">Corrects for soil background</div>
+    </div>
+    <div class="card" style="border-top:2px solid var(--blue)">
+      <div style="font-family:var(--font-display);font-size:26px;font-weight:800;color:var(--blue)">NDWI</div>
+      <div style="font-size:42px;font-weight:700;font-family:var(--font-mono);margin:10px 0">0.12</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Water Index — Leaf moisture</div>
+      <span class="badge badge-blue">Low Stress</span>
+      <div style="margin-top:12px;font-size:12px;color:var(--muted)">Formula: (Green − NIR) / (Green + NIR)</div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-bottom:24px">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Vegetation Indices — 30-Day Trend</div>
+      <div class="chart-wrap" style="height:250px"><canvas id="chartVegTrend"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Field Zone NDVI Map (Simulated)</div>
+      <div id="ndviMap" style="margin-bottom:14px"></div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <div class="info-pill">🟤 Bare Soil &lt;0.2</div>
+        <div class="info-pill">🟡 Sparse 0.2–0.4</div>
+        <div class="info-pill">🟢 Good 0.4–0.6</div>
+        <div class="info-pill">💚 Healthy 0.6–0.8</div>
+        <div class="info-pill">🌿 Dense &gt;0.8</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title"><span class="dot"></span>Index Statistics by Field Zone</div>
+    <table class="tbl">
+      <thead><tr>
+        <th>Zone</th><th>NDVI</th><th>EVI</th><th>SAVI</th><th>NDWI</th>
+        <th>Health Score</th><th>Status</th>
+      </tr></thead>
+      <tbody id="vegTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── SENSORS PAGE -->
+<div id="page-sensors" class="page">
+  <div class="grid-3" style="margin-bottom:20px">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Avg Soil Moisture — All Zones</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chartMoisture"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Temperature Distribution</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chartTemp"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Humidity vs Leaf Wetness</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="chartHumLeaf"></canvas></div>
+    </div>
+  </div>
+
+  <div class="grid-21" style="margin-bottom:20px">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Live Sensor Readings</div>
+      <table class="tbl">
+        <thead><tr>
+          <th>Sensor</th><th>Zone</th><th>Soil Moisture</th>
+          <th>Temp (°C)</th><th>Humidity (%)</th><th>Leaf Wetness</th><th>Pest Risk</th><th>Status</th>
+        </tr></thead>
+        <tbody id="sensorTable"></tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Zone Health Map</div>
+      <div class="zone-map" id="zoneMap"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title"><span class="dot"></span>Sensor Readings — 20-Day History</div>
+    <div class="chart-wrap" style="height:220px"><canvas id="chartSensorHistory"></canvas></div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── DISEASE PAGE -->
+<div id="page-disease" class="page">
+  <div class="grid-2">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>🔬 AI Disease Classifier</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px">
+        <div class="model-chip">
+          <span class="model-chip-icon">🧠</span>
+          <span class="model-chip-name">ResNet50</span>
+          <span class="model-chip-info">38 disease classes</span>
+        </div>
+        <div class="model-chip">
+          <span class="model-chip-icon">🎯</span>
+          <span class="model-chip-name">~95% accuracy</span>
+          <span class="model-chip-info">PlantVillage dataset</span>
+        </div>
+      </div>
+
+      <label class="upload-zone" for="imgUpload">
+        <div class="upload-icon">🌿</div>
+        <div class="upload-text">Click to upload crop leaf image</div>
+        <div class="upload-sub">JPG / PNG · Any crop type supported</div>
+        <input type="file" id="imgUpload" accept="image/*" onchange="analyzeImage(event)"/>
+      </label>
+      <img id="preview-img" alt="Preview"/>
+
+      <div id="analyze-section">
+        <div class="spinner"></div>
+        <div style="color:var(--muted);margin-top:12px;font-size:13px">
+          Running ResNet50 inference...
+        </div>
+      </div>
+
+      <div style="margin-top:16px;font-size:12px;color:var(--muted)">
+        <strong style="color:var(--text)">Supported crops:</strong>
+        Apple, Blueberry, Cherry, Corn, Grape, Orange, Peach, Pepper,
+        Potato, Raspberry, Soybean, Squash, Strawberry, Tomato
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Analysis Results</div>
+      <div id="disease-placeholder" style="text-align:center;padding:60px 20px;color:var(--muted)">
+        <div style="font-size:48px;margin-bottom:12px">🌱</div>
+        <div>Upload a crop image to see AI diagnosis</div>
+      </div>
+      <div id="disease-results" style="display:none"></div>
+    </div>
+  </div>
+
+  <div class="mt24">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Disease Detection History — Demo Examples</div>
+      <table class="tbl">
+        <thead><tr>
+          <th>Date</th><th>Crop</th><th>Disease Detected</th><th>Confidence</th><th>Zone</th><th>Action Taken</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Apr 20</td><td>Tomato</td><td>Early Blight</td><td><span class="badge badge-red">87.3%</span></td><td>East</td><td>Fungicide applied</td></tr>
+          <tr><td>Apr 18</td><td>Potato</td><td>Late Blight</td><td><span class="badge badge-red">91.2%</span></td><td>South</td><td>Quarantine + spray</td></tr>
+          <tr><td>Apr 15</td><td>Corn</td><td>Healthy ✅</td><td><span class="badge badge-green">96.1%</span></td><td>North</td><td>No action needed</td></tr>
+          <tr><td>Apr 12</td><td>Tomato</td><td>Leaf Mold</td><td><span class="badge badge-orange">78.5%</span></td><td>Center</td><td>Ventilation improved</td></tr>
+          <tr><td>Apr 10</td><td>Grape</td><td>Black Rot</td><td><span class="badge badge-red">83.7%</span></td><td>West</td><td>Copper spray applied</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── FORECAST PAGE -->
+<div id="page-forecast" class="page">
+  <div class="grid-21" style="margin-bottom:24px">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>7-Day Pest Outbreak Forecast (LSTM Model)</div>
+      <div class="forecast-grid" id="forecastBars"></div>
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+        <div class="info-pill"><span style="color:var(--green)">●</span> Low &lt;25</div>
+        <div class="info-pill"><span style="color:var(--yellow)">●</span> Moderate 25–50</div>
+        <div class="info-pill"><span style="color:var(--orange)">●</span> High 50–75</div>
+        <div class="info-pill"><span style="color:var(--red)">●</span> Critical &gt;75</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Risk Summary</div>
+      <div id="forecastTable" class="flex-col gap-8"></div>
+      <div class="rec-box mt16">
+        <div class="rec-title">⚡ Model Alert</div>
+        <div class="rec-text">Peak risk forecast on Day 4 (score: 72). Initiate preventive pesticide treatment by <strong>Day 2</strong>. Check West Zone sensors hourly.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>LSTM Model Inputs — 30-Day History</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartLSTMInputs"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Pest Risk vs NDVI Correlation</div>
+      <div class="chart-wrap" style="height:220px"><canvas id="chartCorrelation"></canvas></div>
+    </div>
+  </div>
+
+  <div class="card mt24">
+    <div class="section-title"><span class="dot"></span>Sensor Fusion — Kalman Filter Output</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:16px">
+      Multi-sensor data fusion using Kalman filtering for noise reduction and accurate state estimation.
+    </div>
+    <div class="chart-wrap" style="height:200px"><canvas id="chartKalman"></canvas></div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────── ABOUT PAGE -->
+<div id="page-about" class="page">
+  <div class="grid-2" style="margin-bottom:24px">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Project Overview</div>
+      <div style="font-size:13px;line-height:1.8;color:var(--muted)">
+        <p style="margin-bottom:14px">
+          <strong style="color:var(--text)">AgriSense AI</strong> is an AI-powered precision agriculture monitoring
+          system that integrates multispectral satellite imagery and IoT environmental sensor data
+          to provide real-time crop health insights.
+        </p>
+        <p style="margin-bottom:14px">
+          The system detects vegetation stress, disease outbreaks, and pest risks by combining
+          spectral analysis with temporal AI models, enabling farmers to shift from reactive to
+          <strong style="color:var(--green)">proactive precision agriculture</strong>.
+        </p>
+        <p>This project addresses Problem Statement 13 from the 4th Semester AI/ML curriculum.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Technical Stack</div>
+      <table class="tbl">
+        <thead><tr><th>Layer</th><th>Technology</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>ML/AI</td><td class="mono">PyTorch · TensorFlow</td><td>Model training</td></tr>
+          <tr><td>Satellite</td><td class="mono">GDAL · Rasterio</td><td>Image processing</td></tr>
+          <tr><td>Backend</td><td class="mono">Flask (Python)</td><td>REST API</td></tr>
+          <tr><td>Frontend</td><td class="mono">React · Chart.js</td><td>Dashboard</td></tr>
+          <tr><td>Data</td><td class="mono">NumPy · Pandas</td><td>Data processing</td></tr>
+          <tr><td>CNN Model</td><td class="mono">ResNet50</td><td>Disease detection</td></tr>
+          <tr><td>Seq Model</td><td class="mono">LSTM + Attention</td><td>Pest forecasting</td></tr>
+          <tr><td>Fusion</td><td class="mono">Kalman Filter</td><td>Sensor fusion</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="grid-3" style="margin-bottom:24px">
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>AI Models</div>
+      <div class="flex-col gap-12">
+        <div style="padding:14px;background:rgba(34,212,116,.05);border:1px solid rgba(34,212,116,.15);border-radius:12px">
+          <div style="font-weight:700;color:var(--green);margin-bottom:4px">🧠 ResNet50 CNN</div>
+          <div style="font-size:12px;color:var(--muted)">38-class crop disease classifier. Fine-tuned on PlantVillage dataset with ~95% validation accuracy.</div>
+        </div>
+        <div style="padding:14px;background:rgba(56,178,245,.05);border:1px solid rgba(56,178,245,.15);border-radius:12px">
+          <div style="font-weight:700;color:var(--blue);margin-bottom:4px">📈 LSTM + Attention</div>
+          <div style="font-size:12px;color:var(--muted)">3-layer LSTM with Bahdanau attention. 30-day look-back → 7-day pest risk forecast.</div>
+        </div>
+        <div style="padding:14px;background:rgba(249,115,22,.05);border:1px solid rgba(249,115,22,.15);border-radius:12px">
+          <div style="font-weight:700;color:var(--orange);margin-bottom:4px">🔀 U-Net Segmentation</div>
+          <div style="font-size:12px;color:var(--muted)">Field zone segmentation from satellite imagery. Identifies crop types and health zones.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>Data Sources</div>
+      <div class="flex-col gap-8" style="font-size:13px">
+        <div class="alert-row">
+          <div><div class="alert-type">Sentinel-2</div><div class="alert-meta">Copernicus · 10m resolution · Free</div></div>
+          <span class="badge badge-green">✓</span>
+        </div>
+        <div class="alert-row">
+          <div><div class="alert-type">Landsat 8</div><div class="alert-meta">USGS · 30m resolution · Free</div></div>
+          <span class="badge badge-green">✓</span>
+        </div>
+        <div class="alert-row">
+          <div><div class="alert-type">PlantVillage</div><div class="alert-meta">Kaggle · 54,305 images · Free</div></div>
+          <span class="badge badge-green">✓</span>
+        </div>
+        <div class="alert-row">
+          <div><div class="alert-type">IMD Weather</div><div class="alert-meta">India Met Dept · Real-time</div></div>
+          <span class="badge badge-green">✓</span>
+        </div>
+        <div class="alert-row">
+          <div><div class="alert-type">IoT Sensors</div><div class="alert-meta">Soil · Temp · Humidity · Leaf</div></div>
+          <span class="badge badge-blue">Live</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title"><span class="dot"></span>System Objectives</div>
+      <div class="flex-col gap-8">
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div><div class="timeline-msg">Compute NDVI, EVI, SAVI, NDWI from satellite bands</div></div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div><div class="timeline-msg">Detect crop stress via deep learning (LSTM, CNN)</div></div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div><div class="timeline-msg">Integrate IoT sensors via Kalman filter fusion</div></div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div><div class="timeline-msg">Predict pest outbreaks 7 days ahead</div></div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div><div class="timeline-msg">Generate zone-specific alerts & risk maps</div></div>
+        </div>
+        <div class="timeline-item">
+          <div class="timeline-dot"></div>
+          <div><div class="timeline-msg">Dashboard + mobile-ready field reports</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title"><span class="dot"></span>Project Architecture</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;text-align:center;padding:10px 0">
+      <div style="padding:20px 10px;background:rgba(34,212,116,.07);border:1px solid rgba(34,212,116,.2);border-radius:14px">
+        <div style="font-size:28px;margin-bottom:8px">🛰️</div>
+        <div style="font-size:13px;font-weight:700;color:var(--green)">Satellite Data</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Sentinel-2 · Landsat</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--muted)">→</div>
+      <div style="padding:20px 10px;background:rgba(56,178,245,.07);border:1px solid rgba(56,178,245,.2);border-radius:14px">
+        <div style="font-size:28px;margin-bottom:8px">⚙️</div>
+        <div style="font-size:13px;font-weight:700;color:var(--blue)">Preprocessing</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">GDAL · Rasterio · NDVI</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--muted)">→</div>
+      <div style="padding:20px 10px;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-radius:14px">
+        <div style="font-size:28px;margin-bottom:8px">🧠</div>
+        <div style="font-size:13px;font-weight:700;color:var(--orange)">AI Models</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">ResNet50 · LSTM · U-Net</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;text-align:center;margin-top:12px">
+      <div style="padding:20px 10px;background:rgba(234,179,8,.07);border:1px solid rgba(234,179,8,.2);border-radius:14px">
+        <div style="font-size:28px;margin-bottom:8px">📡</div>
+        <div style="font-size:13px;font-weight:700;color:var(--yellow)">IoT Sensors</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Soil · Temp · Leaf · RH</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--muted)">→</div>
+      <div style="padding:20px 10px;background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);border-radius:14px">
+        <div style="font-size:28px;margin-bottom:8px">🔀</div>
+        <div style="font-size:13px;font-weight:700;color:var(--red)">Sensor Fusion</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Kalman Filter</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--muted)">→</div>
+      <div style="padding:20px 10px;background:rgba(34,212,116,.07);border:1px solid rgba(34,212,116,.2);border-radius:14px">
+        <div style="font-size:28px;margin-bottom:8px">📊</div>
+        <div style="font-size:13px;font-weight:700;color:var(--green)">Dashboard</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:4px">Alerts · Maps · Reports</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<footer>
+  <div>AgriSense AI &nbsp;·&nbsp; Problem Statement 13 &nbsp;·&nbsp; 4th Semester AI/ML Project</div>
+  <div style="margin-top:6px">Built with <span>ResNet50 · LSTM · GDAL · Flask · Sentinel-2</span></div>
+</footer>
+
+<!-- ══════════════════════════════════════════════════════ SCRIPTS -->
+<script>
+// ── DATA GENERATION ──────────────────────────────────────────────────────────
+
+function seed(s){return ()=>{s=Math.sin(s)*10000;return s-Math.floor(s)}}
+const rng=seed(42);
+
+function arr(n,base,amp,noisy=true){
+  return Array.from({length:n},(_,i)=>
+    +(base+amp*Math.sin(i/5)+( noisy?(rng()-.5)*amp*.6:0)).toFixed(3)
+  );
+}
+
+const DAYS=30;
+const labels30=Array.from({length:DAYS},(_,i)=>{
+  const d=new Date();d.setDate(d.getDate()-(DAYS-1-i));
+  return d.toLocaleDateString('en-IN',{month:'short',day:'numeric'});
+});
+const labels14=labels30.slice(-14);
+const labels20=labels30.slice(-20);
+
+const DATA={
+  ndvi:       arr(DAYS,0.55,0.18),
+  evi:        arr(DAYS,0.44,0.14),
+  savi:       arr(DAYS,0.50,0.16),
+  moisture:   arr(DAYS,45,18),
+  temp:       arr(DAYS,29,6),
+  humidity:   arr(DAYS,65,14),
+  leafWet:    arr(DAYS,28,22),
+  pestRisk:   arr(DAYS,42,24),
+  rainfall:   Array.from({length:DAYS},()=> rng()<.2? +(rng()*12+2).toFixed(1):0),
+};
+
+const SENSORS=[
+  {id:'S01',zone:'North Field', moisture:52.3,temp:29.1,humidity:68.4,leaf:18.2,risk:24.1},
+  {id:'S02',zone:'East Field',  moisture:38.7,temp:33.8,humidity:72.1,leaf:41.5,risk:61.3},
+  {id:'S03',zone:'South Field', moisture:61.2,temp:27.4,humidity:65.8,leaf:14.3,risk:18.7},
+  {id:'S04',zone:'West Field',  moisture:29.4,temp:35.2,humidity:78.3,leaf:62.1,risk:74.2},
+  {id:'S05',zone:'Center Plot', moisture:45.9,temp:30.6,humidity:70.0,leaf:27.8,risk:38.5},
+];
+
+const VEG_ZONES=[
+  {zone:'North Field',ndvi:.68,evi:.53,savi:.62,ndwi:.09,score:81},
+  {zone:'East Field', ndvi:.44,evi:.36,savi:.41,ndwi:.18,score:58},
+  {zone:'South Field',ndvi:.74,evi:.60,savi:.68,ndwi:.07,score:87},
+  {zone:'West Field', ndvi:.31,evi:.24,savi:.28,ndwi:.26,score:41},
+  {zone:'Center Plot',ndvi:.58,evi:.46,savi:.53,ndwi:.12,score:70},
+];
+
+const FORECAST=[
+  {day:'Day 1',risk:34,level:'Moderate'},
+  {day:'Day 2',risk:41,level:'Moderate'},
+  {day:'Day 3',risk:58,level:'High'},
+  {day:'Day 4',risk:72,level:'High'},
+  {day:'Day 5',risk:65,level:'High'},
+  {day:'Day 6',risk:48,level:'Moderate'},
+  {day:'Day 7',risk:31,level:'Moderate'},
+];
+
+const DISEASES=[
+  {cls:'Tomato — Early Blight',       conf:.873,healthy:false,
+   rec:'Apply mancozeb fungicide every 7 days. Remove affected lower leaves. Avoid overhead irrigation.'},
+  {cls:'Tomato — Septoria Leaf Spot', conf:.062,healthy:false,rec:''},
+  {cls:'Tomato — Target Spot',        conf:.034,healthy:false,rec:''},
+  {cls:'Tomato — Bacterial Spot',     conf:.014,healthy:false,rec:''},
+  {cls:'Tomato — Healthy',            conf:.007,healthy:true, rec:''},
+];
+
+// ── CLOCK ─────────────────────────────────────────────────────────────────────
+function updateClock(){
+  document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN');
+}
+setInterval(updateClock,1000); updateClock();
+
+// ── TABS ──────────────────────────────────────────────────────────────────────
+function showPage(name){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+name).classList.add('active');
+  const tabs={overview:0,vegetation:1,sensors:2,disease:3,forecast:4,about:5};
+  document.querySelectorAll('.tab')[tabs[name]].classList.add('active');
+}
+
+// ── CHART DEFAULTS ────────────────────────────────────────────────────────────
+Chart.defaults.color='#64748b';
+Chart.defaults.font.family="'DM Sans', sans-serif";
+Chart.defaults.font.size=11;
+const gridColor='rgba(255,255,255,0.05)';
+const tooltipStyle={
+  backgroundColor:'#0f1929',
+  borderColor:'#1e293b',borderWidth:1,
+  padding:10,cornerRadius:10,
+  titleColor:'#e2e8f0',bodyColor:'#94a3b8',
+};
+function baseScales(yLabel=''){
+  return{
+    x:{grid:{color:gridColor},ticks:{maxRotation:0,color:'#64748b'}},
+    y:{grid:{color:gridColor},ticks:{color:'#64748b'},
+       title:yLabel?{display:true,text:yLabel,color:'#475569'}:undefined},
+  };
+}
+
+// ── OVERVIEW CHARTS ───────────────────────────────────────────────────────────
+new Chart(document.getElementById('chartNDVI'),{
+  type:'line',
+  data:{labels:labels30,datasets:[{
+    label:'NDVI',data:DATA.ndvi,borderColor:'#22d474',
+    backgroundColor:'rgba(34,212,116,0.12)',fill:true,
+    tension:.4,pointRadius:0,borderWidth:2,
+  }]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...tooltipStyle}},scales:baseScales()},
+});
+
+new Chart(document.getElementById('chartTempHum'),{
+  type:'line',
+  data:{labels:labels14,datasets:[
+    {label:'Temperature (°C)',data:DATA.temp.slice(-14),borderColor:'#f87171',tension:.4,pointRadius:0,borderWidth:2},
+    {label:'Humidity (%)',data:DATA.humidity.slice(-14),borderColor:'#38b2f5',tension:.4,pointRadius:0,borderWidth:2},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top'},tooltip:{...tooltipStyle}},scales:baseScales()},
+});
+
+new Chart(document.getElementById('chartPestOverview'),{
+  type:'bar',
+  data:{labels:labels14,datasets:[{
+    label:'Pest Risk Score',data:DATA.pestRisk.slice(-14),
+    backgroundColor:'rgba(249,115,22,0.7)',borderRadius:4,
+  }]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...tooltipStyle}},
+    scales:{...baseScales(),y:{...baseScales().y,max:100}}},
+});
+
+// ── VEGETATION CHARTS ─────────────────────────────────────────────────────────
+new Chart(document.getElementById('chartVegTrend'),{
+  type:'line',
+  data:{labels:labels30,datasets:[
+    {label:'NDVI',data:DATA.ndvi,borderColor:'#22d474',tension:.4,pointRadius:0,borderWidth:2,fill:false},
+    {label:'EVI', data:DATA.evi, borderColor:'#a3e635',tension:.4,pointRadius:0,borderWidth:1.5,fill:false},
+    {label:'SAVI',data:DATA.savi,borderColor:'#eab308',tension:.4,pointRadius:0,borderWidth:1.5,fill:false},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top'},tooltip:{...tooltipStyle}},
+    scales:{...baseScales(),y:{...baseScales().y,min:0,max:1}}},
+});
+
+// ── NDVI MAP ──────────────────────────────────────────────────────────────────
+(function buildNDVIMap(){
+  const wrap=document.getElementById('ndviMap');
+  wrap.className='ndvi-map-grid';
+  const r=new Array(20).fill(0).map(()=>new Array(20).fill(0).map((_,j)=>{
+    const base=j<10?0.65:0.35;
+    return Math.max(-0.1,Math.min(0.9,base+(Math.random()-.5)*0.3));
+  }));
+  function ndviColor(v){
+    if(v<0)   return'#1e3a5f';
+    if(v<0.2) return'#78350f';
+    if(v<0.4) return'#a16207';
+    if(v<0.6) return'#166534';
+    if(v<0.8) return'#15803d';
+    return '#14532d';
+  }
+  r.flat().forEach(v=>{
+    const c=document.createElement('div');
+    c.className='ndvi-cell';c.style.background=ndviColor(v);
+    c.title=`NDVI: ${v.toFixed(2)}`;
+    wrap.appendChild(c);
+  });
+})();
+
+// ── VEG TABLE ─────────────────────────────────────────────────────────────────
+(function buildVegTable(){
+  const tb=document.getElementById('vegTable');
+  VEG_ZONES.forEach(z=>{
+    const s=z.score;
+    const b=s>=75?'badge-green':s>=55?'badge-yellow':'badge-red';
+    const lbl=s>=75?'Healthy':s>=55?'Moderate':'Stressed';
+    tb.innerHTML+=`<tr>
+      <td><strong>${z.zone}</strong></td>
+      <td class="mono">${z.ndvi}</td><td class="mono">${z.evi}</td>
+      <td class="mono">${z.savi}</td><td class="mono">${z.ndwi}</td>
+      <td><span class="mono">${s}</span>/100</td>
+      <td><span class="badge ${b}">${lbl}</span></td>
+    </tr>`;
+  });
+})();
+
+// ── SENSOR CHARTS ─────────────────────────────────────────────────────────────
+new Chart(document.getElementById('chartMoisture'),{
+  type:'line',
+  data:{labels:labels20,datasets:[{
+    label:'Soil Moisture (%)',data:DATA.moisture.slice(-20),
+    borderColor:'#38b2f5',backgroundColor:'rgba(56,178,245,.1)',
+    fill:true,tension:.4,pointRadius:0,borderWidth:2,
+  }]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...tooltipStyle}},scales:baseScales()},
+});
+
+new Chart(document.getElementById('chartTemp'),{
+  type:'bar',
+  data:{labels:SENSORS.map(s=>s.id),datasets:[{
+    label:'Temperature (°C)',
+    data:SENSORS.map(s=>s.temp),
+    backgroundColor:SENSORS.map(s=>s.temp>34?'rgba(239,68,68,.7)':'rgba(56,178,245,.7)'),
+    borderRadius:6,
+  }]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...tooltipStyle}},scales:baseScales()},
+});
+
+new Chart(document.getElementById('chartHumLeaf'),{
+  type:'radar',
+  data:{
+    labels:SENSORS.map(s=>s.id),
+    datasets:[
+      {label:'Humidity (%)',data:SENSORS.map(s=>s.humidity),borderColor:'#38b2f5',
+       backgroundColor:'rgba(56,178,245,.1)',pointRadius:3},
+      {label:'Leaf Wetness (%)',data:SENSORS.map(s=>s.leaf),borderColor:'#a78bfa',
+       backgroundColor:'rgba(167,139,250,.1)',pointRadius:3},
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top'},tooltip:{...tooltipStyle}},
+    scales:{r:{grid:{color:gridColor},ticks:{color:'#64748b',stepSize:20},max:100,min:0}}},
+});
+
+// ── SENSOR TABLE ──────────────────────────────────────────────────────────────
+(function buildSensorTable(){
+  const tb=document.getElementById('sensorTable');
+  SENSORS.forEach(s=>{
+    const rb=s.risk>=75?'badge-red':s.risk>=50?'badge-orange':s.risk>=25?'badge-yellow':'badge-green';
+    const rl=s.risk>=75?'Critical':s.risk>=50?'High':s.risk>=25?'Moderate':'Low';
+    const mb=s.moisture<35?'style="color:var(--red)"':s.moisture>60?'style="color:var(--blue)"':'';
+    const tb2=s.temp>34?'style="color:var(--red)"':'';
+    tb.innerHTML+=`<tr>
+      <td><span class="mono" style="color:var(--green);font-weight:700">${s.id}</span></td>
+      <td>${s.zone}</td>
+      <td class="mono" ${mb}>${s.moisture}%</td>
+      <td class="mono" ${tb2}>${s.temp}°C</td>
+      <td class="mono">${s.humidity}%</td>
+      <td class="mono">${s.leaf}%</td>
+      <td class="mono" style="color:${s.risk>=75?'var(--red)':s.risk>=50?'var(--orange)':s.risk>=25?'var(--yellow)':'var(--green)'}">${s.risk}</td>
+      <td><span class="badge ${rb}">${rl}</span></td>
+    </tr>`;
+  });
+})();
+
+// ── ZONE MAP ──────────────────────────────────────────────────────────────────
+(function buildZoneMap(){
+  const zones=[
+    {name:'North',ndvi:.68,risk:24},{name:'NE',ndvi:.61,risk:30},{name:'East',risk:61,ndvi:.44},
+    {name:'NW',ndvi:.72,risk:20},{name:'Center',ndvi:.58,risk:38},{name:'SE',ndvi:.49,risk:47},
+    {name:'West',ndvi:.31,risk:74},{name:'SW',ndvi:.38,risk:58},{name:'South',ndvi:.74,risk:18},
+  ];
+  const wrap=document.getElementById('zoneMap');
+  zones.forEach(z=>{
+    const color=z.risk>=75?'rgba(239,68,68,.25)':z.risk>=50?'rgba(249,115,22,.25)':
+                z.risk>=25?'rgba(234,179,8,.25)':'rgba(34,212,116,.2)';
+    const border=z.risk>=75?'var(--red)':z.risk>=50?'var(--orange)':
+                 z.risk>=25?'var(--yellow)':'var(--green)';
+    const vc=z.risk>=75?'var(--red)':z.risk>=50?'var(--orange)':z.risk>=25?'var(--yellow)':'var(--green)';
+    const el=document.createElement('div');
+    el.className='zone';
+    el.style.cssText=`background:${color};border:1px solid ${border};`;
+    el.innerHTML=`<span class="zone-name">${z.name}</span>
+      <span class="zone-val" style="color:${vc}">${z.risk}</span>
+      <span style="font-size:10px;color:${vc}">NDVI ${z.ndvi}</span>`;
+    wrap.appendChild(el);
+  });
+})();
+
+new Chart(document.getElementById('chartSensorHistory'),{
+  type:'line',
+  data:{labels:labels20,datasets:[
+    {label:'Soil Moisture (%)',data:DATA.moisture.slice(-20),borderColor:'#38b2f5',tension:.4,pointRadius:0,borderWidth:2},
+    {label:'Humidity (%)',data:DATA.humidity.slice(-20),borderColor:'#a78bfa',tension:.4,pointRadius:0,borderWidth:1.5},
+    {label:'Pest Risk',data:DATA.pestRisk.slice(-20),borderColor:'#f97316',tension:.4,pointRadius:0,borderWidth:2},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top'},tooltip:{...tooltipStyle}},scales:baseScales()},
+});
+
+// ── DISEASE UPLOAD ────────────────────────────────────────────────────────────
+function analyzeImage(e){
+  const file=e.target.files[0];if(!file)return;
+  const url=URL.createObjectURL(file);
+  const img=document.getElementById('preview-img');
+  img.src=url; img.style.display='block';
+  document.getElementById('analyze-section').style.display='block';
+  document.getElementById('disease-results').style.display='none';
+  document.getElementById('disease-placeholder').style.display='none';
+
+  setTimeout(()=>{
+    document.getElementById('analyze-section').style.display='none';
+    showDiseaseResult();
+  },2400);
+}
+
+function showDiseaseResult(){
+  const el=document.getElementById('disease-results');
+  const d=DISEASES[0];
+  el.style.display='block';
+  el.innerHTML=`
+    <div class="result-box ${d.healthy?'healthy':'diseased'}">
+      <div style="font-size:24px">${d.healthy?'✅':'⚠️'}</div>
+      <div class="result-disease">${d.cls}</div>
+      <div class="result-conf">Confidence: <strong style="color:var(--green)">${(d.conf*100).toFixed(1)}%</strong></div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em">Top 5 Predictions</div>
+    ${DISEASES.map((p,i)=>`
+      <div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <span style="color:${i===0?'var(--green)':'var(--muted)'}">${p.cls}</span>
+          <span class="mono" style="font-size:12px">${(p.conf*100).toFixed(1)}%</span>
+        </div>
+        <div class="prog-wrap"><div class="prog-bar" style="width:${p.conf*100}%;background:${i===0?'var(--green)':'#334155'}"></div></div>
+      </div>`).join('')}
+    <div class="rec-box mt16">
+      <div class="rec-title">💊 Treatment Recommendation</div>
+      <div class="rec-text">${d.rec}</div>
+    </div>
+  `;
+}
+
+// ── FORECAST ──────────────────────────────────────────────────────────────────
+(function buildForecast(){
+  const wrap=document.getElementById('forecastBars');
+  const tbl=document.getElementById('forecastTable');
+  FORECAST.forEach(f=>{
+    const c=f.risk>=75?'var(--red)':f.risk>=50?'var(--orange)':f.risk>=25?'var(--yellow)':'var(--green)';
+    const bcls=f.risk>=75?'badge-red':f.risk>=50?'badge-orange':'badge-yellow';
+    wrap.innerHTML+=`
+      <div class="fc-col">
+        <div class="fc-bar-wrap">
+          <div class="fc-bar" style="height:${f.risk}%;background:${c}"></div>
+        </div>
+        <div class="fc-score" style="color:${c}">${f.risk}</div>
+        <div class="fc-label">${f.day}</div>
+      </div>`;
+    tbl.innerHTML+=`
+      <div class="alert-row">
+        <div><div class="alert-type">${f.day}</div></div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="mono" style="color:${c}">${f.risk}</span>
+          <span class="badge ${bcls}">${f.level}</span>
+        </div>
+      </div>`;
+  });
+})();
+
+new Chart(document.getElementById('chartLSTMInputs'),{
+  type:'line',
+  data:{labels:labels30,datasets:[
+    {label:'Leaf Wetness (%)',data:DATA.leafWet,borderColor:'#a78bfa',tension:.4,pointRadius:0,borderWidth:1.5},
+    {label:'Pest Risk',data:DATA.pestRisk,borderColor:'#f97316',tension:.4,pointRadius:0,borderWidth:2},
+    {label:'Humidity (%)',data:DATA.humidity,borderColor:'#38b2f5',tension:.4,pointRadius:0,borderWidth:1.5},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top'},tooltip:{...tooltipStyle}},scales:baseScales()},
+});
+
+new Chart(document.getElementById('chartCorrelation'),{
+  type:'scatter',
+  data:{datasets:[{
+    label:'NDVI vs Pest Risk',
+    data:DATA.ndvi.map((v,i)=>({x:v,y:DATA.pestRisk[i]})),
+    backgroundColor:'rgba(249,115,22,0.5)',
+    pointRadius:4,
+  }]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...tooltipStyle}},
+    scales:{
+      x:{...baseScales().x,title:{display:true,text:'NDVI',color:'#475569'},min:0,max:1},
+      y:{...baseScales().y,title:{display:true,text:'Pest Risk Score',color:'#475569'},min:0,max:100},
+    }},
+});
+
+// Kalman filter demo data
+const raw=DATA.pestRisk;
+const kalman=raw.reduce((acc,v,i)=>{
+  if(i===0) return[v];
+  const prev=acc[acc.length-1];
+  return[...acc,+(prev*.7+v*.3).toFixed(2)];
+},[]);
+
+new Chart(document.getElementById('chartKalman'),{
+  type:'line',
+  data:{labels:labels30,datasets:[
+    {label:'Raw Sensor Data',data:raw,borderColor:'rgba(249,115,22,0.5)',tension:.1,pointRadius:0,borderWidth:1.5,borderDash:[4,4]},
+    {label:'Kalman Filtered',data:kalman,borderColor:'#22d474',tension:.5,pointRadius:0,borderWidth:2.5},
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top'},tooltip:{...tooltipStyle}},scales:baseScales()},
+});
+</script>
+</body>
+</html>
